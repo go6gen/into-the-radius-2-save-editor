@@ -573,38 +573,9 @@
             margin-top: 5px;
         }
 
-        .money-display {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(20, 15, 11, 0.8);
-            padding: 15px;
-            border-radius: var(--radius-md);
-            margin-top: 15px;
-            border: 1px solid rgba(255, 107, 0, 0.3);
-        }
-
-        .money-label {
-            font-size: 1rem;
-            color: var(--text-secondary);
-        }
-
-        .current-money {
-            font-size: 2rem;
-            font-weight: 900;
-            color: var(--accent-orange);
-            text-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
-        }
-
-        .currency {
-            font-size: 1.3rem;
-            margin-left: 5px;
-            color: var(--accent-orange-glow);
-            font-weight: 700;
-        }
-
         .input-group {
             margin-bottom: 25px;
+            position: relative;
         }
 
         .input-label {
@@ -615,14 +586,14 @@
             font-size: 1rem;
         }
 
-        .money-input-container, .access-input-container, .points-input-container {
+        .money-input-container, .access-input-container, .points-input-container, .health-input-container {
             position: relative;
             display: flex;
             align-items: center;
             margin-bottom: 15px;
         }
 
-        .money-input-container i, .access-input-container i, .points-input-container i {
+        .money-input-container i, .access-input-container i, .points-input-container i, .health-input-container i {
             position: absolute;
             left: 15px;
             color: var(--accent-orange);
@@ -630,7 +601,7 @@
             z-index: 1;
         }
 
-        #money, #accessLevel, #accessPoints {
+        #money, #accessLevel, #accessPoints, #health {
             width: 100%;
             padding: 15px 15px 15px 50px;
             background: rgba(40, 30, 22, 0.9);
@@ -642,13 +613,13 @@
             transition: all 0.3s;
         }
 
-        #money:disabled, #accessLevel:disabled, #accessPoints:disabled {
+        #money:disabled, #accessLevel:disabled, #accessPoints:disabled, #health:disabled {
             background: rgba(60, 50, 42, 0.7);
             color: #888;
             cursor: not-allowed;
         }
 
-        #money:focus, #accessLevel:focus, #accessPoints:focus {
+        #money:focus, #accessLevel:focus, #accessPoints:focus, #health:focus {
             outline: none;
             border-color: var(--accent-orange);
             box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.3);
@@ -711,6 +682,26 @@
 
         .process-btn:disabled::before {
             display: none;
+        }
+
+        .restriction-toggle {
+            position: absolute;
+            right: 0;
+            top: 0;
+            padding: 8px 15px;
+            background: rgba(255, 107, 0, 0.1);
+            color: var(--accent-orange);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .restriction-toggle:hover {
+            background: rgba(255, 107, 0, 0.2);
+            border-color: var(--accent-orange);
         }
 
         .footer {
@@ -832,6 +823,13 @@
             .modal-btn {
                 width: 100%;
             }
+            
+            .restriction-toggle {
+                position: relative;
+                margin-top: 10px;
+                width: 100%;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -871,6 +869,14 @@
                         <span class="money-change-label">New access points:</span>
                         <span class="money-change-value" id="modalNewPoints">0</span>
                     </div>
+                    <div class="money-change-row">
+                        <span class="money-change-label">Old health:</span>
+                        <span class="money-change-value" id="modalOldHealth">0.0</span>
+                    </div>
+                    <div class="money-change-row">
+                        <span class="money-change-label">New health:</span>
+                        <span class="money-change-value" id="modalNewHealth">0.0</span>
+                    </div>
                 </div>
                 <p>A ZIP file with your modified save and backup has been downloaded.</p>
             </div>
@@ -900,6 +906,30 @@
             <div class="modal-buttons">
                 <button class="modal-btn modal-btn-close" id="warningCancelBtn">Cancel</button>
                 <button class="modal-btn modal-btn-continue" id="warningContinueBtn">Continue Anyway</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="restrictionModalOverlay">
+        <div class="modal" id="restrictionModal">
+            <div class="modal-header">
+                <div class="modal-icon" id="restrictionModalIcon" style="background: var(--warning-color);">
+                    <i class="fas fa-exclamation-triangle" id="restrictionModalIconClass"></i>
+                </div>
+                <h3 class="modal-title" id="restrictionModalTitle">Health Restrictions</h3>
+            </div>
+            <div class="modal-content" id="restrictionModalContent">
+                <div class="warning-box">
+                    <p><i class="fas fa-exclamation-triangle"></i> <strong>WARNING: THIS IS AT YOUR OWN RISK!</strong></p>
+                    <p>Disabling health restrictions allows you to set health values above 100, which is not normal gameplay behavior.</p>
+                    <p>This may cause unexpected game behavior, crashes, or save file corruption.</p>
+                    <p>Only disable restrictions if you understand the risks and accept the consequences.</p>
+                </div>
+                <p>Do you want to disable the health restriction (100 max)?</p>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-close" id="restrictionCancelBtn">Cancel</button>
+                <button class="modal-btn modal-btn-continue" id="restrictionConfirmBtn">Disable Restrictions</button>
             </div>
         </div>
     </div>
@@ -958,14 +988,6 @@
                         <i class="fas fa-check-circle" style="color: var(--accent-orange); font-size: 1.5rem;"></i>
                     </div>
                 </div>
-                
-                <div class="money-display">
-                    <div class="money-label">Current Money in Save File:</div>
-                    <div>
-                        <span class="current-money" id="currentMoney">0</span>
-                        <span class="currency">₽</span>
-                    </div>
-                </div>
             </div>
 
             <div class="input-group">
@@ -992,6 +1014,20 @@
                 </div>
             </div>
 
+            <div class="input-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="input-label" for="health">Health</label>
+                    <button class="restriction-toggle" id="restrictionToggle">Disable Restrictions</button>
+                </div>
+                <div class="health-input-container">
+                    <i class="fas fa-heart"></i>
+                    <input type="number" id="health" placeholder="Upload a file to enable" min="1" max="100" step="1" disabled>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 5px;" id="healthHint">
+                    <i class="fas fa-info-circle" style="color: var(--accent-orange);"></i> Enter a value between 1 and 100 (without decimals)
+                </p>
+            </div>
+
             <button class="process-btn" id="processBtn" onclick="process()" disabled>
                 <i class="fas fa-magic"></i>
                 Modify & Download ZIP File
@@ -1011,16 +1047,21 @@
     const PROPERTY_NAMES = {
         'Money': { type: 'IntProperty', value: null, offset: null },
         'AccessLevel': { type: 'IntProperty', value: null, offset: null },
-        'AccessLvlPoints': { type: 'IntProperty', value: null, offset: null }
+        'AccessLvlPoints': { type: 'IntProperty', value: null, offset: null },
+        'CurrentHealth': { type: 'FloatProperty', value: null, offset: null }
     };
     
     let originalMoney = 0;
     let originalAccessLevel = 0;
     let originalAccessPoints = 0;
+    let originalHealth = 0;
     
     let currentOldMoney = 0;
     let currentOldAccessLevel = 0;
     let currentOldAccessPoints = 0;
+    let currentOldHealth = 0;
+    
+    let healthRestricted = true;
     
     function findProperty(buffer, propertyName) {
         const data = new Uint8Array(buffer);
@@ -1057,7 +1098,12 @@
                     
                     cursor += 4;
                     
-                    const value = view.getInt32(cursor, true);
+                    let value;
+                    if (propertyType === 'FloatProperty') {
+                        value = view.getFloat32(cursor, true);
+                    } else {
+                        value = view.getInt32(cursor, true);
+                    }
                     
                     return {
                         offset: cursor,
@@ -1095,11 +1141,13 @@
     const fileInfo = document.getElementById('fileInfo');
     const fileName = document.getElementById('fileName');
     const fileSize = document.getElementById('fileSize');
-    const currentMoney = document.getElementById('currentMoney');
     const moneyInput = document.getElementById('money');
     const accessLevelInput = document.getElementById('accessLevel');
     const accessPointsInput = document.getElementById('accessPoints');
+    const healthInput = document.getElementById('health');
     const processBtn = document.getElementById('processBtn');
+    const restrictionToggle = document.getElementById('restrictionToggle');
+    const healthHint = document.getElementById('healthHint');
     
     const modalOverlay = document.getElementById('modalOverlay');
     const modalTitle = document.getElementById('modalTitle');
@@ -1112,6 +1160,8 @@
     const modalNewAccess = document.getElementById('modalNewAccess');
     const modalOldPoints = document.getElementById('modalOldPoints');
     const modalNewPoints = document.getElementById('modalNewPoints');
+    const modalOldHealth = document.getElementById('modalOldHealth');
+    const modalNewHealth = document.getElementById('modalNewHealth');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
     
     const warningModalOverlay = document.getElementById('warningModalOverlay');
@@ -1122,6 +1172,15 @@
     const warningNewAccess = document.getElementById('warningNewAccess');
     const warningCancelBtn = document.getElementById('warningCancelBtn');
     const warningContinueBtn = document.getElementById('warningContinueBtn');
+    
+    const restrictionModalOverlay = document.getElementById('restrictionModalOverlay');
+    const restrictionModal = document.getElementById('restrictionModal');
+    const restrictionModalTitle = document.getElementById('restrictionModalTitle');
+    const restrictionModalContent = document.getElementById('restrictionModalContent');
+    const restrictionModalIcon = document.getElementById('restrictionModalIcon');
+    const restrictionModalIconClass = document.getElementById('restrictionModalIconClass');
+    const restrictionCancelBtn = document.getElementById('restrictionCancelBtn');
+    const restrictionConfirmBtn = document.getElementById('restrictionConfirmBtn');
     
     let currentFileData = null;
     
@@ -1146,6 +1205,10 @@
             if (results['AccessLvlPoints']) {
                 originalAccessPoints = results['AccessLvlPoints'].value;
                 currentOldAccessPoints = originalAccessPoints;
+            }
+            if (results['CurrentHealth']) {
+                originalHealth = results['CurrentHealth'].value;
+                currentOldHealth = originalHealth;
             }
             
             return results;
@@ -1172,10 +1235,30 @@
         document.body.style.overflow = 'hidden';
     }
     
+    function showRestrictionModal() {
+        restrictionModalOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
     function closeModal() {
         modalOverlay.classList.remove('active');
         warningModalOverlay.classList.remove('active');
+        restrictionModalOverlay.classList.remove('active');
         document.body.style.overflow = 'auto';
+    }
+    
+    function updateHealthRestriction() {
+        if (healthRestricted) {
+            healthInput.max = 100;
+            healthInput.min = 1;
+            restrictionToggle.textContent = "Disable Restrictions";
+            healthHint.innerHTML = '<i class="fas fa-info-circle" style="color: var(--accent-orange);"></i> Enter a value between 1 and 100 (without decimals)';
+        } else {
+            healthInput.removeAttribute('max');
+            healthInput.min = 1;
+            restrictionToggle.textContent = "Enable Restrictions";
+            healthHint.innerHTML = '<i class="fas fa-info-circle" style="color: var(--accent-orange);"></i> Restrictions disabled - you can enter any positive value';
+        }
     }
     
     fileInput.addEventListener('change', function(e) {
@@ -1203,14 +1286,7 @@
                 return;
             }
             
-            currentMoney.textContent = currentOldMoney.toLocaleString();
-            
             fileInfo.classList.add('show');
-            
-            currentMoney.classList.add('pulse-animation');
-            setTimeout(() => {
-                currentMoney.classList.remove('pulse-animation');
-            }, 2000);
             
             moneyInput.disabled = false;
             moneyInput.placeholder = "Enter new money value";
@@ -1236,6 +1312,18 @@
                 accessPointsInput.disabled = true;
                 accessPointsInput.placeholder = "Property not found in save";
                 accessPointsInput.value = "";
+            }
+            
+            if (properties['CurrentHealth']) {
+                healthInput.disabled = false;
+                healthInput.placeholder = "Enter health value";
+                const healthValue = Math.floor(currentOldHealth);
+                healthInput.value = (healthValue > 0 && healthValue <= 100) ? healthValue : 100;
+                updateHealthRestriction();
+            } else {
+                healthInput.disabled = true;
+                healthInput.placeholder = "Property not found in save";
+                healthInput.value = "";
             }
             
             processBtn.disabled = false;
@@ -1302,15 +1390,35 @@
         const accessLevelValue = parseInt(accessLevelInput.value);
         const accessPointsValue = parseInt(accessPointsInput.value);
         
+        const healthValue = parseInt(healthInput.value);
+        if (healthRestricted && (healthValue < 1 || healthValue > 100)) {
+            showModal(
+                'Invalid Health',
+                '<p>Please enter a health value between 1 and 100.</p>',
+                'fas fa-exclamation-triangle',
+                'var(--warning-color)'
+            );
+            return;
+        }
+        if (!healthRestricted && healthValue < 1) {
+            showModal(
+                'Invalid Health',
+                '<p>Please enter a positive health value.</p>',
+                'fas fa-exclamation-triangle',
+                'var(--warning-color)'
+            );
+            return;
+        }
+        
         if (!accessLevelInput.disabled && accessLevelValue > currentOldAccessLevel) {
             showWarningModal(currentOldAccessLevel, accessLevelValue);
             return;
         }
         
-        performSaveModification(moneyValue, accessLevelValue, accessPointsValue);
+        performSaveModification(moneyValue, accessLevelValue, accessPointsValue, healthValue);
     }
     
-    function performSaveModification(moneyValue, accessLevelValue, accessPointsValue) {
+    function performSaveModification(moneyValue, accessLevelValue, accessPointsValue, healthValue) {
         processBtn.disabled = true;
         processBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         
@@ -1332,6 +1440,12 @@
             console.log(`Updated AccessLvlPoints at 0x${PROPERTY_NAMES['AccessLvlPoints'].offset.toString(16)} to ${accessPointsValue}`);
         }
         
+        if (!healthInput.disabled && PROPERTY_NAMES['CurrentHealth'].offset !== null) {
+            const healthFloat = parseFloat(healthValue + '.0');
+            view.setFloat32(PROPERTY_NAMES['CurrentHealth'].offset, healthFloat, true);
+            console.log(`Updated CurrentHealth at 0x${PROPERTY_NAMES['CurrentHealth'].offset.toString(16)} to ${healthFloat}`);
+        }
+        
         const file = fileInput.files[0];
         const zip = new JSZip();
         
@@ -1349,11 +1463,12 @@
             const oldMoneyValue = currentOldMoney;
             const oldAccessLevelValue = currentOldAccessLevel;
             const oldAccessPointsValue = currentOldAccessPoints;
+            const oldHealthValue = currentOldHealth;
             
-            currentMoney.textContent = moneyValue.toLocaleString();
             currentOldMoney = moneyValue;
             currentOldAccessLevel = accessLevelValue;
             currentOldAccessPoints = accessPointsValue;
+            currentOldHealth = parseFloat(healthValue + '.0');
             
             const successContent = `
                 <p>Save file successfully updated!</p>
@@ -1384,6 +1499,15 @@
                         <span class="money-change-label">New access points:</span>
                         <span class="money-change-value">${accessPointsValue}</span>
                     </div>` : ''}
+                    ${!healthInput.disabled ? `
+                    <div class="money-change-row">
+                        <span class="money-change-label">Old health:</span>
+                        <span class="money-change-value">${oldHealthValue.toFixed(1)}</span>
+                    </div>
+                    <div class="money-change-row">
+                        <span class="money-change-label">New health:</span>
+                        <span class="money-change-value">${healthValue}.0</span>
+                    </div>` : ''}
                 </div>
                 <p>A ZIP file with your modified save and backup has been downloaded.</p>
             `;
@@ -1397,11 +1521,6 @@
             
             processBtn.disabled = false;
             processBtn.innerHTML = '<i class="fas fa-magic"></i> Modify & Download ZIP File';
-            
-            currentMoney.classList.add('pulse-animation');
-            setTimeout(() => {
-                currentMoney.classList.remove('pulse-animation');
-            }, 2000);
         }).catch(error => {
             showModal(
                 'Processing Error',
@@ -1416,13 +1535,30 @@
     
     modalCloseBtn.addEventListener('click', closeModal);
     warningCancelBtn.addEventListener('click', closeModal);
+    restrictionCancelBtn.addEventListener('click', closeModal);
+    
+    restrictionConfirmBtn.addEventListener('click', function() {
+        healthRestricted = false;
+        updateHealthRestriction();
+        closeModal();
+    });
+    
+    restrictionToggle.addEventListener('click', function() {
+        if (healthRestricted) {
+            showRestrictionModal();
+        } else {
+            healthRestricted = true;
+            updateHealthRestriction();
+        }
+    });
     
     warningContinueBtn.addEventListener('click', function() {
         closeModal();
         const moneyValue = parseInt(moneyInput.value);
         const accessLevelValue = parseInt(accessLevelInput.value) || 0;
         const accessPointsValue = parseInt(accessPointsInput.value) || 0;
-        performSaveModification(moneyValue, accessLevelValue, accessPointsValue);
+        const healthValue = parseInt(healthInput.value) || 100;
+        performSaveModification(moneyValue, accessLevelValue, accessPointsValue, healthValue);
     });
     
     modalOverlay.addEventListener('click', function(e) {
@@ -1437,8 +1573,14 @@
         }
     });
     
+    restrictionModalOverlay.addEventListener('click', function(e) {
+        if (e.target === restrictionModalOverlay) {
+            closeModal();
+        }
+    });
+    
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && (modalOverlay.classList.contains('active') || warningModalOverlay.classList.contains('active'))) {
+        if (e.key === 'Escape' && (modalOverlay.classList.contains('active') || warningModalOverlay.classList.contains('active') || restrictionModalOverlay.classList.contains('active'))) {
             closeModal();
         }
     });
@@ -1446,6 +1588,7 @@
     moneyInput.disabled = true;
     accessLevelInput.disabled = true;
     accessPointsInput.disabled = true;
+    healthInput.disabled = true;
     processBtn.disabled = true;
 </script>
 </body>

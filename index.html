@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Into The Radius 2 – Save Editor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <style>
+        :root {
+            --primary-dark: #0d0f12;
+            --secondary-dark: #1a1d23;
+            --accent-orange: #ff6b00;
+            --accent-orange-glow: #ff8c42;
+            --accent-orange-dark: #cc5500;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --border-color: #3a2c24;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --card-bg: rgba(30, 23, 18, 0.85);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-glow: 0 0 20px rgba(255, 107, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: var(--primary-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image: 
+                url('https://static.tildacdn.net/tild3062-6531-4262-b035-326564636433/KeyArt_Character.jpg'),
+                radial-gradient(circle at 10% 20%, rgba(255, 107, 0, 0.08) 0%, transparent 25%),
+                radial-gradient(circle at 90% 80%, rgba(255, 107, 0, 0.05) 0%, transparent 25%),
+                linear-gradient(to bottom, rgba(13, 15, 18, 0.7), rgba(21, 24, 30, 0.75));
+            background-size: cover;
+            background-position: center;
+            background-blend-mode: overlay;
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .background-circle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.15;
+            background: radial-gradient(circle, var(--accent-orange) 0%, transparent 70%);
+        }
+
+        .circle-1 {
+            width: 400px;
+            height: 400px;
+            top: -100px;
+            right: -100px;
+            animation: spin-slow 60s linear infinite;
+        }
+
+        .circle-2 {
+            width: 300px;
+            height: 300px;
+            bottom: -50px;
+            left: -50px;
+            animation: spin-slow-reverse 50s linear infinite;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 0 40px rgba(255, 107, 0, 0.5);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-orange), var(--accent-orange-glow), var(--accent-orange));
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 107, 0, 0.3);
+        }
+
+        .modal-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--accent-orange);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
+        }
+
+        .modal-icon i {
+            font-size: 1.5rem;
+            color: #000;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-orange-glow);
+        }
+
+        .modal-content {
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .modal-content p {
+            margin-bottom: 10px;
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.1);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .warning-box i {
+            color: var(--warning-color);
+            margin-right: 8px;
+        }
+
+        .money-change {
+            background: rgba(40, 30, 22, 0.9);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid rgba(255, 107, 0, 0.3);
+        }
+
+        .money-change-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .money-change-label {
+            color: var(--text-secondary);
+        }
+
+        .money-change-value {
+            color: var(--accent-orange);
+            font-weight: 700;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-orange-dark));
+            color: #000;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .modal-btn:hover {
+            background: linear-gradient(135deg, var(--accent-orange-glow), var(--accent-orange));
+            box-shadow: 0 0 15px rgba(255, 107, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .modal-btn-close {
+            background: rgba(255, 107, 0, 0.2);
+            color: var(--accent-orange);
+        }
+
+        .modal-btn-close:hover {
+            background: rgba(255, 107, 0, 0.3);
+        }
+
+        .modal-btn-continue {
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
+            color: white;
+        }
+
+        .modal-btn-continue:hover {
+            background: linear-gradient(135deg, #f87171, var(--danger-color));
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px 0;
+            position: relative;
+        }
+
+        .logo-container {
+            position: relative;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .logo-background-circle {
+            position: absolute;
+            border-radius: 50%;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 0;
+            opacity: 0.4;
+        }
+
+        .logo-outer-circle {
+            width: 400px;
+            height: 400px;
+            background-image: url('circle.png');
+            animation: spin-clockwise 50s linear infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 107, 0, 0.5));
+        }
+
+        .logo-inner-circle {
+            width: 280px;
+            height: 280px;
+            background-image: url('circle.png');
+            animation: spin-counterclockwise 40s linear infinite;
+            filter: drop-shadow(0 0 15px rgba(255, 107, 0, 0.4));
+        }
+
+        .main-logo {
+            max-width: 350px;
+            width: 100%;
+            height: auto;
+            filter: drop-shadow(0 0 25px rgba(255, 107, 0, 0.9));
+            position: relative;
+            z-index: 2;
+        }
+
+        .tagline {
+            font-size: 1.6rem;
+            color: var(--accent-orange-glow);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .early-access {
+            display: inline-block;
+            background-color: var(--accent-orange);
+            color: #000;
+            font-weight: bold;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            box-shadow: 0 0 15px rgba(255, 107, 0, 0.6);
+        }
+
+        .editor-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-glow);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .editor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-orange), var(--accent-orange-glow), var(--accent-orange));
+        }
+
+        .editor-card:hover {
+            box-shadow: 0 0 25px rgba(255, 107, 0, 0.6);
+            transform: translateY(-3px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 107, 0, 0.3);
+        }
+
+        .card-icon-container {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            margin-right: 15px;
+        }
+
+        .card-outer-circle, .card-inner-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .card-outer-circle {
+            background-image: url('circle.png');
+            animation: spin-clockwise 35s linear infinite;
+            filter: drop-shadow(0 0 8px rgba(255, 107, 0, 0.6));
+        }
+
+        .card-inner-circle {
+            width: 60%;
+            height: 60%;
+            top: 20%;
+            left: 20%;
+            background-image: url('circle.png');
+            animation: spin-counterclockwise 25s linear infinite;
+        }
+
+        .card-icon {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--accent-orange);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            box-shadow: 0 0 15px rgba(255, 107, 0, 0.8);
+        }
+
+        .card-icon i {
+            font-size: 1.2rem;
+            color: #000;
+        }
+
+        .card-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text-primary) 65%, var(--accent-orange-glow) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .card-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-top: 5px;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 30px 20px;
+            text-align: center;
+            margin-bottom: 25px;
+            transition: all 0.3s;
+            background-color: rgba(13, 15, 18, 0.6);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 107, 0, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-orange);
+            background-color: rgba(13, 15, 18, 0.8);
+        }
+
+        .upload-area:hover::before {
+            opacity: 1;
+        }
+
+        .upload-icon {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 15px;
+        }
+
+        .upload-outer-circle, .upload-inner-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .upload-outer-circle {
+            background-image: url('circle.png');
+            animation: spin-clockwise 30s linear infinite;
+            filter: drop-shadow(0 0 8px rgba(255, 107, 0, 0.5));
+        }
+
+        .upload-inner-circle {
+            width: 65%;
+            height: 65%;
+            top: 17.5%;
+            left: 17.5%;
+            background-image: url('circle.png');
+            animation: spin-counterclockwise 20s linear infinite;
+        }
+
+        .upload-icon-center {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--accent-orange);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            box-shadow: 0 0 10px rgba(255, 107, 0, 0.8);
+        }
+
+        .upload-icon-center i {
+            font-size: 1.2rem;
+            color: #000;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .upload-hint {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        #file {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-info {
+            background: rgba(40, 30, 22, 0.9);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 5px solid var(--accent-orange);
+            display: none;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .file-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--accent-orange-glow);
+        }
+
+        .file-size {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .money-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(20, 15, 11, 0.8);
+            padding: 15px;
+            border-radius: var(--radius-md);
+            margin-top: 15px;
+            border: 1px solid rgba(255, 107, 0, 0.3);
+        }
+
+        .money-label {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .current-money {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--accent-orange);
+            text-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
+        }
+
+        .currency {
+            font-size: 1.3rem;
+            margin-left: 5px;
+            color: var(--accent-orange-glow);
+            font-weight: 700;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .money-input-container, .access-input-container, .points-input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .money-input-container i, .access-input-container i, .points-input-container i {
+            position: absolute;
+            left: 15px;
+            color: var(--accent-orange);
+            font-size: 1.3rem;
+            z-index: 1;
+        }
+
+        #money, #accessLevel, #accessPoints {
+            width: 100%;
+            padding: 15px 15px 15px 50px;
+            background: rgba(40, 30, 22, 0.9);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+
+        #money:disabled, #accessLevel:disabled, #accessPoints:disabled {
+            background: rgba(60, 50, 42, 0.7);
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        #money:focus, #accessLevel:focus, #accessPoints:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.3);
+        }
+
+        .process-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-orange-dark));
+            color: #000;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .process-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.7s;
+        }
+
+        .process-btn:hover {
+            background: linear-gradient(135deg, var(--accent-orange-glow), var(--accent-orange));
+            box-shadow: 0 0 20px rgba(255, 107, 0, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .process-btn:hover::before {
+            left: 100%;
+        }
+
+        .process-btn:active {
+            transform: translateY(0);
+        }
+
+        .process-btn:disabled {
+            background: var(--border-color);
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .process-btn:disabled::before {
+            display: none;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            width: 100%;
+        }
+
+        @keyframes spin-clockwise {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes spin-counterclockwise {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-360deg); }
+        }
+
+        @keyframes spin-slow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes spin-slow-reverse {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(255, 107, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); }
+        }
+
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                max-width: 95%;
+            }
+            
+            .logo-outer-circle {
+                width: 320px;
+                height: 320px;
+            }
+            
+            .logo-inner-circle {
+                width: 220px;
+                height: 220px;
+            }
+            
+            .main-logo {
+                max-width: 280px;
+            }
+            
+            .editor-card {
+                padding: 20px;
+            }
+            
+            .card-title {
+                font-size: 1.6rem;
+            }
+            
+            .tagline {
+                font-size: 1.3rem;
+            }
+            
+            .modal {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo-outer-circle {
+                width: 260px;
+                height: 260px;
+            }
+            
+            .logo-inner-circle {
+                width: 180px;
+                height: 180px;
+            }
+            
+            .main-logo {
+                max-width: 220px;
+            }
+            
+            .tagline {
+                font-size: 1.1rem;
+                letter-spacing: 2px;
+            }
+            
+            .card-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .card-icon-container {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+            
+            .modal-buttons {
+                flex-direction: column;
+            }
+            
+            .modal-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <div class="modal-icon" id="modalIcon">
+                    <i class="fas fa-check-circle" id="modalIconClass"></i>
+                </div>
+                <h3 class="modal-title" id="modalTitle">Success</h3>
+            </div>
+            <div class="modal-content" id="modalContent">
+                <p>Save file successfully updated!</p>
+                <div class="money-change">
+                    <div class="money-change-row">
+                        <span class="money-change-label">Old money:</span>
+                        <span class="money-change-value" id="modalOldMoney">0 ₽</span>
+                    </div>
+                    <div class="money-change-row">
+                        <span class="money-change-label">New money:</span>
+                        <span class="money-change-value" id="modalNewMoney">0 ₽</span>
+                    </div>
+                    <div class="money-change-row">
+                        <span class="money-change-label">Old access level:</span>
+                        <span class="money-change-value" id="modalOldAccess">0</span>
+                    </div>
+                    <div class="money-change-row">
+                        <span class="money-change-label">New access level:</span>
+                        <span class="money-change-value" id="modalNewAccess">0</span>
+                    </div>
+                    <div class="money-change-row">
+                        <span class="money-change-label">Old access points:</span>
+                        <span class="money-change-value" id="modalOldPoints">0</span>
+                    </div>
+                    <div class="money-change-row">
+                        <span class="money-change-label">New access points:</span>
+                        <span class="money-change-value" id="modalNewPoints">0</span>
+                    </div>
+                </div>
+                <p>A ZIP file with your modified save and backup has been downloaded.</p>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-close" id="modalCloseBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="warningModalOverlay">
+        <div class="modal" id="warningModal">
+            <div class="modal-header">
+                <div class="modal-icon" id="warningModalIcon" style="background: var(--warning-color);">
+                    <i class="fas fa-exclamation-triangle" id="warningModalIconClass"></i>
+                </div>
+                <h3 class="modal-title" id="warningModalTitle">Security Level Warning</h3>
+            </div>
+            <div class="modal-content" id="warningModalContent">
+                <div class="warning-box">
+                    <p><i class="fas fa-exclamation-triangle"></i> <strong>WARNING: DO NOT INCREASE YOUR SECURITY LEVEL UNLESS YOU HAVE THE DISTORTION MASK ARTIFACT!</strong></p>
+                    <p>Increasing your security level without the Distortion Mask will cause anomaly zones to spawn in mission areas, making it extremely difficult to earn Security Points (SP).</p>
+                    <p>Only increase your security level if you already have the Distortion Mask artifact equipped.</p>
+                </div>
+                <p>You are about to increase your security level from <span id="warningOldAccess">0</span> to <span id="warningNewAccess" style="color: var(--accent-orange); font-weight: bold;">0</span>.</p>
+                <p>Are you sure you want to continue?</p>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-close" id="warningCancelBtn">Cancel</button>
+                <button class="modal-btn modal-btn-continue" id="warningContinueBtn">Continue Anyway</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="background-circle circle-1"></div>
+    <div class="background-circle circle-2"></div>
+    
+    <div class="container">
+        <header class="header">
+            <div class="logo-container">
+                <div class="logo-background-circle logo-outer-circle"></div>
+                <div class="logo-background-circle logo-inner-circle"></div>
+                
+                <img src="logo.png" alt="Into The Radius 2" class="main-logo">
+            </div>
+            
+            <div class="tagline">Into The Radius 2 • Save File Editor</div>
+            <div class="early-access">Early Access</div>
+        </header>
+
+        <main class="editor-card">
+            <div class="card-header">
+                <div class="card-icon-container">
+                    <div class="card-outer-circle"></div>
+                    <div class="card-inner-circle"></div>
+                    <div class="card-icon">
+                        <i class="fas fa-save"></i>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="card-title">Save File Editor</h2>
+                    <p class="card-subtitle">By Gekkefries</p>
+                </div>
+            </div>
+
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <div class="upload-outer-circle"></div>
+                    <div class="upload-inner-circle"></div>
+                    <div class="upload-icon-center">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                </div>
+                <p class="upload-text">Click to upload or drag your .sav file here</p>
+                <p class="upload-hint">Only .sav files from Into The Radius 2 are supported</p>
+                <input type="file" id="file" accept=".sav">
+            </div>
+
+            <div class="file-info" id="fileInfo">
+                <div class="file-header">
+                    <div>
+                        <div class="file-name" id="fileName">No file selected</div>
+                        <div class="file-size" id="fileSize">-</div>
+                    </div>
+                    <div>
+                        <i class="fas fa-check-circle" style="color: var(--accent-orange); font-size: 1.5rem;"></i>
+                    </div>
+                </div>
+                
+                <div class="money-display">
+                    <div class="money-label">Current Money in Save File:</div>
+                    <div>
+                        <span class="current-money" id="currentMoney">0</span>
+                        <span class="currency">₽</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label" for="money">Enter New Money Amount</label>
+                <div class="money-input-container">
+                    <i class="fas fa-ruble-sign"></i>
+                    <input type="number" id="money" placeholder="Upload a file to enable" min="0" step="100" disabled>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label" for="accessLevel">Access Level</label>
+                <div class="access-input-container">
+                    <i class="fas fa-shield-alt"></i>
+                    <input type="number" id="accessLevel" placeholder="Upload a file to enable" min="0" step="1" disabled>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label" for="accessPoints">Access Level Points</label>
+                <div class="points-input-container">
+                    <i class="fas fa-star"></i>
+                    <input type="number" id="accessPoints" placeholder="Upload a file to enable" min="0" step="1" disabled>
+                </div>
+            </div>
+
+            <button class="process-btn" id="processBtn" onclick="process()" disabled>
+                <i class="fas fa-magic"></i>
+                Modify & Download ZIP File
+            </button>
+        </main>
+
+        <footer class="footer">
+            <p>Into The Radius 2 Save Editor | Unofficial Tool | Use at your own risk</p>
+            <p>This tool is not affiliated with CM-Games LLC. Into The Radius is a trademark of CM-Games LLC.</p>
+            <p style="margin-top: 10px; color: var(--accent-orange); font-size: 0.8rem;">
+                <i class="fas fa-gamepad"></i> Into The Radius 2 is available on Steam and Meta Quest
+            </p>
+        </footer>
+    </div>
+
+<script>
+    const PROPERTY_NAMES = {
+        'Money': { type: 'IntProperty', value: null, offset: null },
+        'AccessLevel': { type: 'IntProperty', value: null, offset: null },
+        'AccessLvlPoints': { type: 'IntProperty', value: null, offset: null }
+    };
+    
+    let originalMoney = 0;
+    let originalAccessLevel = 0;
+    let originalAccessPoints = 0;
+    
+    let currentOldMoney = 0;
+    let currentOldAccessLevel = 0;
+    let currentOldAccessPoints = 0;
+    
+    function findProperty(buffer, propertyName) {
+        const data = new Uint8Array(buffer);
+        const nameBytes = new TextEncoder().encode(propertyName);
+        
+        for (let i = 0; i < data.length - nameBytes.length; i++) {
+            let found = true;
+            
+            for (let j = 0; j < nameBytes.length; j++) {
+                if (data[i + j] !== nameBytes[j]) {
+                    found = false;
+                    break;
+                }
+            }
+            
+            if (found) {
+                console.log(`Found ${propertyName} at offset: 0x${i.toString(16)}`);
+                
+                try {
+                    const view = new DataView(buffer);
+                    const nameLen = view.getInt32(i - 4, true);
+                    
+                    let cursor = i + nameBytes.length + 1;
+                    
+                    const typeLen = view.getInt32(cursor, true);
+                    cursor += 4;
+                    
+                    const typeBytes = new Uint8Array(buffer, cursor, Math.abs(typeLen));
+                    const propertyType = new TextDecoder().decode(typeBytes);
+                    cursor += Math.abs(typeLen) + 1;
+                    
+                    const size = view.getInt32(cursor, true);
+                    cursor += 4;
+                    
+                    cursor += 4;
+                    
+                    const value = view.getInt32(cursor, true);
+                    
+                    return {
+                        offset: cursor,
+                        value: value,
+                        type: propertyType
+                    };
+                } catch (error) {
+                    console.error(`Error parsing ${propertyName}:`, error);
+                    return null;
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    function parseSaveFile(buffer) {
+        const results = {};
+        
+        for (const propName in PROPERTY_NAMES) {
+            const propData = findProperty(buffer, propName);
+            if (propData) {
+                PROPERTY_NAMES[propName].value = propData.value;
+                PROPERTY_NAMES[propName].offset = propData.offset;
+                PROPERTY_NAMES[propName].type = propData.type;
+                results[propName] = propData;
+            }
+        }
+        
+        return results;
+    }
+    
+    const fileInput = document.getElementById('file');
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const currentMoney = document.getElementById('currentMoney');
+    const moneyInput = document.getElementById('money');
+    const accessLevelInput = document.getElementById('accessLevel');
+    const accessPointsInput = document.getElementById('accessPoints');
+    const processBtn = document.getElementById('processBtn');
+    
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalContent = document.getElementById('modalContent');
+    const modalIcon = document.getElementById('modalIcon');
+    const modalIconClass = document.getElementById('modalIconClass');
+    const modalOldMoney = document.getElementById('modalOldMoney');
+    const modalNewMoney = document.getElementById('modalNewMoney');
+    const modalOldAccess = document.getElementById('modalOldAccess');
+    const modalNewAccess = document.getElementById('modalNewAccess');
+    const modalOldPoints = document.getElementById('modalOldPoints');
+    const modalNewPoints = document.getElementById('modalNewPoints');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    
+    const warningModalOverlay = document.getElementById('warningModalOverlay');
+    const warningModal = document.getElementById('warningModal');
+    const warningModalTitle = document.getElementById('warningModalTitle');
+    const warningModalContent = document.getElementById('warningModalContent');
+    const warningOldAccess = document.getElementById('warningOldAccess');
+    const warningNewAccess = document.getElementById('warningNewAccess');
+    const warningCancelBtn = document.getElementById('warningCancelBtn');
+    const warningContinueBtn = document.getElementById('warningContinueBtn');
+    
+    let currentFileData = null;
+    
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' bytes';
+        else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        else return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+    
+    function readProperties(buffer) {
+        try {
+            const results = parseSaveFile(buffer);
+            
+            if (results['Money']) {
+                originalMoney = results['Money'].value;
+                currentOldMoney = originalMoney;
+            }
+            if (results['AccessLevel']) {
+                originalAccessLevel = results['AccessLevel'].value;
+                currentOldAccessLevel = originalAccessLevel;
+            }
+            if (results['AccessLvlPoints']) {
+                originalAccessPoints = results['AccessLvlPoints'].value;
+                currentOldAccessPoints = originalAccessPoints;
+            }
+            
+            return results;
+        } catch (error) {
+            console.error('Error reading properties:', error);
+            return null;
+        }
+    }
+    
+    function showModal(title, content, iconClass, iconBgColor) {
+        modalTitle.textContent = title;
+        modalContent.innerHTML = content;
+        modalIconClass.className = iconClass;
+        modalIcon.style.background = iconBgColor;
+        
+        modalOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function showWarningModal(oldAccess, newAccess) {
+        warningOldAccess.textContent = oldAccess;
+        warningNewAccess.textContent = newAccess;
+        warningModalOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeModal() {
+        modalOverlay.classList.remove('active');
+        warningModalOverlay.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+    
+    fileInput.addEventListener('change', function(e) {
+        if (this.files.length === 0) return;
+        
+        const file = this.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function() {
+            currentFileData = reader.result;
+            
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            
+            const properties = readProperties(currentFileData);
+            
+            if (!properties || !properties['Money']) {
+                showModal(
+                    'Unsupported File',
+                    '<p>This does not appear to be a valid Into The Radius 2 save file.</p>' +
+                    '<p>Make sure you selected the correct .sav file.</p>',
+                    'fas fa-exclamation-triangle',
+                    'var(--warning-color)'
+                );
+                return;
+            }
+            
+            currentMoney.textContent = currentOldMoney.toLocaleString();
+            
+            fileInfo.classList.add('show');
+            
+            currentMoney.classList.add('pulse-animation');
+            setTimeout(() => {
+                currentMoney.classList.remove('pulse-animation');
+            }, 2000);
+            
+            moneyInput.disabled = false;
+            moneyInput.placeholder = "Enter new money value";
+            moneyInput.value = currentOldMoney || 0;
+            
+            if (properties['AccessLevel']) {
+                accessLevelInput.disabled = false;
+                accessLevelInput.placeholder = "Enter access level";
+                accessLevelInput.value = currentOldAccessLevel || 0;
+                accessLevelInput.min = 0;
+                accessLevelInput.max = 5;
+            } else {
+                accessLevelInput.disabled = true;
+                accessLevelInput.placeholder = "Property not found in save";
+                accessLevelInput.value = "";
+            }
+            
+            if (properties['AccessLvlPoints']) {
+                accessPointsInput.disabled = false;
+                accessPointsInput.placeholder = "Enter access points";
+                accessPointsInput.value = currentOldAccessPoints || 0;
+            } else {
+                accessPointsInput.disabled = true;
+                accessPointsInput.placeholder = "Property not found in save";
+                accessPointsInput.value = "";
+            }
+            
+            processBtn.disabled = false;
+        };
+        
+        reader.onerror = function() {
+            showModal(
+                'Error',
+                '<p>Error reading file. Please try again.</p>',
+                'fas fa-exclamation-triangle',
+                'var(--warning-color)'
+            );
+        };
+        
+        reader.readAsArrayBuffer(file);
+    });
+    
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.borderColor = 'var(--accent-orange)';
+        this.style.backgroundColor = 'rgba(20, 15, 11, 0.8)';
+    });
+    
+    uploadArea.addEventListener('dragleave', function() {
+        this.style.borderColor = 'var(--border-color)';
+        this.style.backgroundColor = 'rgba(13, 15, 18, 0.6)';
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.borderColor = 'var(--border-color)';
+        this.style.backgroundColor = 'rgba(13, 15, 18, 0.6)';
+        
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            const event = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(event);
+        }
+    });
+    
+    function process() {
+        if (!currentFileData) {
+            showModal(
+                'Upload Required',
+                '<p>Please upload a .sav file first.</p>',
+                'fas fa-upload',
+                'var(--accent-orange)'
+            );
+            return;
+        }
+        
+        const moneyValue = parseInt(moneyInput.value);
+        
+        if (isNaN(moneyValue) || moneyValue < 0) {
+            showModal(
+                'Invalid Input',
+                '<p>Please enter a valid positive number for the money value.</p>',
+                'fas fa-exclamation-triangle',
+                'var(--warning-color)'
+            );
+            return;
+        }
+        
+        const accessLevelValue = parseInt(accessLevelInput.value);
+        const accessPointsValue = parseInt(accessPointsInput.value);
+        
+        if (!accessLevelInput.disabled && accessLevelValue > currentOldAccessLevel) {
+            showWarningModal(currentOldAccessLevel, accessLevelValue);
+            return;
+        }
+        
+        performSaveModification(moneyValue, accessLevelValue, accessPointsValue);
+    }
+    
+    function performSaveModification(moneyValue, accessLevelValue, accessPointsValue) {
+        processBtn.disabled = true;
+        processBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        
+        const modifiedBuffer = new Uint8Array(currentFileData).slice(0);
+        const view = new DataView(modifiedBuffer.buffer);
+        
+        if (PROPERTY_NAMES['Money'].offset !== null) {
+            view.setInt32(PROPERTY_NAMES['Money'].offset, moneyValue, true);
+            console.log(`Updated Money at 0x${PROPERTY_NAMES['Money'].offset.toString(16)} to ${moneyValue}`);
+        }
+        
+        if (!accessLevelInput.disabled && PROPERTY_NAMES['AccessLevel'].offset !== null) {
+            view.setInt32(PROPERTY_NAMES['AccessLevel'].offset, accessLevelValue, true);
+            console.log(`Updated AccessLevel at 0x${PROPERTY_NAMES['AccessLevel'].offset.toString(16)} to ${accessLevelValue}`);
+        }
+        
+        if (!accessPointsInput.disabled && PROPERTY_NAMES['AccessLvlPoints'].offset !== null) {
+            view.setInt32(PROPERTY_NAMES['AccessLvlPoints'].offset, accessPointsValue, true);
+            console.log(`Updated AccessLvlPoints at 0x${PROPERTY_NAMES['AccessLvlPoints'].offset.toString(16)} to ${accessPointsValue}`);
+        }
+        
+        const file = fileInput.files[0];
+        const zip = new JSZip();
+        
+        zip.file(file.name, modifiedBuffer);
+        zip.file(file.name.replace(".sav", "_backup.sav"), currentFileData);
+        
+        zip.generateAsync({ type: "blob" }).then(blob => {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = file.name.replace(".sav", "_modified.zip");
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            const oldMoneyValue = currentOldMoney;
+            const oldAccessLevelValue = currentOldAccessLevel;
+            const oldAccessPointsValue = currentOldAccessPoints;
+            
+            currentMoney.textContent = moneyValue.toLocaleString();
+            currentOldMoney = moneyValue;
+            currentOldAccessLevel = accessLevelValue;
+            currentOldAccessPoints = accessPointsValue;
+            
+            const successContent = `
+                <p>Save file successfully updated!</p>
+                <div class="money-change">
+                    <div class="money-change-row">
+                        <span class="money-change-label">Old money:</span>
+                        <span class="money-change-value">${oldMoneyValue.toLocaleString()} ₽</span>
+                    </div>
+                    <div class="money-change-row">
+                        <span class="money-change-label">New money:</span>
+                        <span class="money-change-value">${moneyValue.toLocaleString()} ₽</span>
+                    </div>
+                    ${!accessLevelInput.disabled ? `
+                    <div class="money-change-row">
+                        <span class="money-change-label">Old access level:</span>
+                        <span class="money-change-value">${oldAccessLevelValue}</span>
+                    </div>
+                    <div class="money-change-row">
+                        <span class="money-change-label">New access level:</span>
+                        <span class="money-change-value">${accessLevelValue}</span>
+                    </div>` : ''}
+                    ${!accessPointsInput.disabled ? `
+                    <div class="money-change-row">
+                        <span class="money-change-label">Old access points:</span>
+                        <span class="money-change-value">${oldAccessPointsValue}</span>
+                    </div>
+                    <div class="money-change-row">
+                        <span class="money-change-label">New access points:</span>
+                        <span class="money-change-value">${accessPointsValue}</span>
+                    </div>` : ''}
+                </div>
+                <p>A ZIP file with your modified save and backup has been downloaded.</p>
+            `;
+            
+            showModal(
+                'Success',
+                successContent,
+                'fas fa-check-circle',
+                'var(--success-color)'
+            );
+            
+            processBtn.disabled = false;
+            processBtn.innerHTML = '<i class="fas fa-magic"></i> Modify & Download ZIP File';
+            
+            currentMoney.classList.add('pulse-animation');
+            setTimeout(() => {
+                currentMoney.classList.remove('pulse-animation');
+            }, 2000);
+        }).catch(error => {
+            showModal(
+                'Processing Error',
+                '<p>Error creating ZIP file. Please try again.</p>',
+                'fas fa-exclamation-triangle',
+                'var(--warning-color)'
+            );
+            processBtn.disabled = false;
+            processBtn.innerHTML = '<i class="fas fa-magic"></i> Modify & Download ZIP File';
+        });
+    }
+    
+    modalCloseBtn.addEventListener('click', closeModal);
+    warningCancelBtn.addEventListener('click', closeModal);
+    
+    warningContinueBtn.addEventListener('click', function() {
+        closeModal();
+        const moneyValue = parseInt(moneyInput.value);
+        const accessLevelValue = parseInt(accessLevelInput.value) || 0;
+        const accessPointsValue = parseInt(accessPointsInput.value) || 0;
+        performSaveModification(moneyValue, accessLevelValue, accessPointsValue);
+    });
+    
+    modalOverlay.addEventListener('click', function(e) {
+        if (e.target === modalOverlay) {
+            closeModal();
+        }
+    });
+    
+    warningModalOverlay.addEventListener('click', function(e) {
+        if (e.target === warningModalOverlay) {
+            closeModal();
+        }
+    });
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && (modalOverlay.classList.contains('active') || warningModalOverlay.classList.contains('active'))) {
+            closeModal();
+        }
+    });
+    
+    moneyInput.disabled = true;
+    accessLevelInput.disabled = true;
+    accessPointsInput.disabled = true;
+    processBtn.disabled = true;
+</script>
+</body>
+</html>

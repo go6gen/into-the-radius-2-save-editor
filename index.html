@@ -84,6 +84,32 @@
             z-index: 1;
         }
 
+        .help-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-orange-dark));
+            color: #000;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        .help-button:hover {
+            background: linear-gradient(135deg, var(--accent-orange-glow), var(--accent-orange));
+            box-shadow: 0 0 15px rgba(255, 107, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .help-button i {
+            margin-right: 8px;
+        }
+
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -110,13 +136,15 @@
             border-radius: var(--radius-lg);
             padding: 30px;
             width: 90%;
-            max-width: 500px;
+            max-width: 600px;
             border: 1px solid var(--border-color);
             box-shadow: 0 0 40px rgba(255, 107, 0, 0.5);
             transform: translateY(-20px);
             transition: transform 0.3s ease;
             position: relative;
             overflow: hidden;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-overlay.active .modal {
@@ -173,6 +201,74 @@
             margin-bottom: 10px;
         }
 
+        .modal-content h4 {
+            color: var(--accent-orange-glow);
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .modal-content ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .modal-content li {
+            margin-bottom: 8px;
+        }
+
+        .modal-content code {
+            background: rgba(255, 107, 0, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: var(--accent-orange-glow);
+            font-size: 0.9rem;
+            display: inline-block;
+            margin: 5px 0;
+        }
+
+        .copy-path {
+            background: rgba(40, 30, 22, 0.9);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid rgba(255, 107, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .copy-path code {
+            flex: 1;
+            margin: 0;
+            background: transparent;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-orange-dark));
+            color: #000;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-size: 0.85rem;
+        }
+
+        .copy-btn:hover {
+            background: linear-gradient(135deg, var(--accent-orange-glow), var(--accent-orange));
+            box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
+        }
+
+        .copy-btn.copied {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+        }
+
         .warning-box {
             background: rgba(245, 158, 11, 0.1);
             border-radius: var(--radius-md);
@@ -183,6 +279,19 @@
 
         .warning-box i {
             color: var(--warning-color);
+            margin-right: 8px;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .info-box i {
+            color: #3b82f6;
             margin-right: 8px;
         }
 
@@ -830,10 +939,71 @@
                 width: 100%;
                 text-align: center;
             }
+
+            .copy-path {
+                flex-direction: column;
+            }
+
+            .copy-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="modal-overlay" id="helpModalOverlay">
+        <div class="modal" id="helpModal">
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <h3 class="modal-title">How to Get Your Save File</h3>
+            </div>
+            <div class="modal-content">
+                <div class="info-box">
+                    <p><i class="fas fa-info-circle"></i> <strong>PCVR ONLY:</strong> This guide is for PCVR users. The save editor works for standalone Quest users too, but the process to get the save file is different.</p>
+                </div>
+
+                <h4>Option 1: Manual Navigation</h4>
+                <ol>
+                    <li>Open <strong>File Explorer</strong></li>
+                    <li>Go to <strong>Documents</strong></li>
+                    <li>Open the <strong>My Games</strong> folder</li>
+                    <li>Select <strong>IntoTheRadius2</strong> (or just <strong>IntoTheRadius</strong>)</li>
+                    <li>Select the profile you're using</li>
+                    <li>Choose either the <strong>single player</strong> or <strong>co-op</strong> folder</li>
+                    <li>Your save files (.sav) are located here</li>
+                </ol>
+
+                <h4>Option 2: Quick Access (Recommended)</h4>
+                <ol>
+                    <li>Press <strong>Windows Key + R</strong> to open the Run dialog</li>
+                    <li>Copy and paste this path into the Run dialog:</li>
+                </ol>
+
+                <div class="copy-path">
+                    <code id="savePath">%USERPROFILE%\OneDrive\Documents\My Games\IntoTheRadius2</code>
+                    <button class="copy-btn" id="copyPathBtn" onclick="copyPath()">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+
+                <ol start="3">
+                    <li>Press <strong>Enter</strong></li>
+                    <li>Navigate to your profile and game mode folder</li>
+                    <li>Your save files are here</li>
+                </ol>
+
+                <div class="warning-box">
+                    <p><i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> If the path doesn't work, try removing <code>OneDrive\</code> from the path, or navigate manually using Option 1.</p>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-close" id="helpModalCloseBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal" id="modal">
             <div class="modal-header">
@@ -948,6 +1118,11 @@
             
             <div class="tagline">Into The Radius 2 • Save File Editor</div>
             <div class="early-access">Early Access</div>
+
+            <button class="help-button" id="helpBtn" onclick="showHelpModal()">
+                <i class="fas fa-question-circle"></i>
+                How to Get Save File
+            </button>
         </header>
 
         <main class="editor-card">
@@ -1149,6 +1324,10 @@
     const restrictionToggle = document.getElementById('restrictionToggle');
     const healthHint = document.getElementById('healthHint');
     
+    const helpModalOverlay = document.getElementById('helpModalOverlay');
+    const helpModal = document.getElementById('helpModal');
+    const helpModalCloseBtn = document.getElementById('helpModalCloseBtn');
+    
     const modalOverlay = document.getElementById('modalOverlay');
     const modalTitle = document.getElementById('modalTitle');
     const modalContent = document.getElementById('modalContent');
@@ -1240,11 +1419,35 @@
         document.body.style.overflow = 'hidden';
     }
     
+    function showHelpModal() {
+        helpModalOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
     function closeModal() {
         modalOverlay.classList.remove('active');
         warningModalOverlay.classList.remove('active');
         restrictionModalOverlay.classList.remove('active');
+        helpModalOverlay.classList.remove('active');
         document.body.style.overflow = 'auto';
+    }
+    
+    function copyPath() {
+        const pathText = document.getElementById('savePath').textContent;
+        const copyBtn = document.getElementById('copyPathBtn');
+        
+        navigator.clipboard.writeText(pathText).then(function() {
+            const originalHTML = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            copyBtn.classList.add('copied');
+            
+            setTimeout(function() {
+                copyBtn.innerHTML = originalHTML;
+                copyBtn.classList.remove('copied');
+            }, 2000);
+        }).catch(function(err) {
+            console.error('Failed to copy: ', err);
+        });
     }
     
     function updateHealthRestriction() {
@@ -1427,23 +1630,19 @@
         
         if (PROPERTY_NAMES['Money'].offset !== null) {
             view.setInt32(PROPERTY_NAMES['Money'].offset, moneyValue, true);
-            console.log(`Updated Money at 0x${PROPERTY_NAMES['Money'].offset.toString(16)} to ${moneyValue}`);
         }
         
         if (!accessLevelInput.disabled && PROPERTY_NAMES['AccessLevel'].offset !== null) {
             view.setInt32(PROPERTY_NAMES['AccessLevel'].offset, accessLevelValue, true);
-            console.log(`Updated AccessLevel at 0x${PROPERTY_NAMES['AccessLevel'].offset.toString(16)} to ${accessLevelValue}`);
         }
         
         if (!accessPointsInput.disabled && PROPERTY_NAMES['AccessLvlPoints'].offset !== null) {
             view.setInt32(PROPERTY_NAMES['AccessLvlPoints'].offset, accessPointsValue, true);
-            console.log(`Updated AccessLvlPoints at 0x${PROPERTY_NAMES['AccessLvlPoints'].offset.toString(16)} to ${accessPointsValue}`);
         }
         
         if (!healthInput.disabled && PROPERTY_NAMES['CurrentHealth'].offset !== null) {
             const healthFloat = parseFloat(healthValue + '.0');
             view.setFloat32(PROPERTY_NAMES['CurrentHealth'].offset, healthFloat, true);
-            console.log(`Updated CurrentHealth at 0x${PROPERTY_NAMES['CurrentHealth'].offset.toString(16)} to ${healthFloat}`);
         }
         
         const file = fileInput.files[0];
@@ -1534,6 +1733,7 @@
     }
     
     modalCloseBtn.addEventListener('click', closeModal);
+    helpModalCloseBtn.addEventListener('click', closeModal);
     warningCancelBtn.addEventListener('click', closeModal);
     restrictionCancelBtn.addEventListener('click', closeModal);
     
@@ -1567,6 +1767,12 @@
         }
     });
     
+    helpModalOverlay.addEventListener('click', function(e) {
+        if (e.target === helpModalOverlay) {
+            closeModal();
+        }
+    });
+    
     warningModalOverlay.addEventListener('click', function(e) {
         if (e.target === warningModalOverlay) {
             closeModal();
@@ -1580,7 +1786,7 @@
     });
     
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && (modalOverlay.classList.contains('active') || warningModalOverlay.classList.contains('active') || restrictionModalOverlay.classList.contains('active'))) {
+        if (e.key === 'Escape' && (modalOverlay.classList.contains('active') || warningModalOverlay.classList.contains('active') || restrictionModalOverlay.classList.contains('active') || helpModalOverlay.classList.contains('active'))) {
             closeModal();
         }
     });
